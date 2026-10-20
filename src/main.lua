@@ -8,6 +8,7 @@ local Provider = require('provider')
 local KarakeepReaderLink = require('karakeep/features/reader/modules/readerlink')
 local Settings = require('karakeep/shared/karakeep_settings')
 local getMainMenu = require('karakeep/features/menu/main_menu')
+local MenuOrder = require('karakeep/features/menu/menu_order')
 local KarakeepAPI = require('karakeep/api/karakeep_api')
 local KarakeepBookmark = require('karakeep/domains/karakeep_bookmark')
 local QueueManager = require('karakeep/features/queue/queue_manager')
@@ -123,6 +124,7 @@ function Karakeep:init()
 
     Provider:register('exporter', 'karakeep', KarakeepExporter:new({ ui = self.ui }))
 
+    MenuOrder.addToToolsMenu()
     self.ui.menu:registerToMainMenu(self)
 end
 
