@@ -64,18 +64,4 @@ function BookmarkFields.getTitle(bookmark)
     return util.trim(title)
 end
 
----Get the host name of a URL, without a leading "www."
----@param url string|nil
----@return string|nil
-function BookmarkFields.getHost(url)
-    if not str(url) then
-        return nil
-    end
-    local host = url:match('^%a[%w+.-]*://([^/:?#]+)')
-    if host then
-        host = host:gsub('^www%.', '')
-    end
-    return host
-end
-
 return BookmarkFields

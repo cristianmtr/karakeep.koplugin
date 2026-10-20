@@ -191,7 +191,7 @@ end
 ---@field parentId string|nil
 
 ---Get all lists of the user
----@param config? HttpClientOptions<nil, nil>
+---@param config? HttpClientOptions<nil, QueryParam[]>
 ---@return {lists: ListResponse[]}|nil result, Error|nil error
 function KarakeepAPI:getLists(config)
     return self.api_client:get('/lists', config)
@@ -211,7 +211,7 @@ end
 
 ---Download an asset's binary content
 ---@param asset_id string
----@param config? HttpClientOptions<nil, nil>
+---@param config? HttpClientOptions<nil, QueryParam[]>
 ---@return RawResponse|nil result, Error|nil error
 function KarakeepAPI:getAsset(asset_id, config)
     config = config or {}

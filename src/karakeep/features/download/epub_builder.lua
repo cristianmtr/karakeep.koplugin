@@ -421,7 +421,7 @@ function EpubBuilder.build(opts)
         end
         local content, content_type = opts.fetch_image(url)
         local ext = content and EpubBuilder.detectImageExtension(content, content_type)
-        if ext then
+        if content and ext then
             local id = ('img%03d'):format(#images + 1)
             local href = ('images/%s.%s'):format(id, ext)
             -- Images are already compressed (except SVG, which is text)
@@ -449,7 +449,7 @@ function EpubBuilder.build(opts)
     if opts.fetch_cover then
         local content, content_type = opts.fetch_cover()
         local ext = content and EpubBuilder.detectImageExtension(content, content_type)
-        if ext and ext ~= 'svg' then
+        if content and ext and ext ~= 'svg' then
             cover = {
                 id = 'cover-image',
                 href = 'images/cover.' .. ext,

@@ -22,6 +22,10 @@ local DownloadService = require('karakeep/features/download/download_service')
 ---@field karakeep_link KarakeepReaderLink
 ---@field karakeep_queue_manager QueueManager
 ---@field karakeep_downloader DownloadService
+---@field document table|nil Open document (ReaderUI only)
+---@field file_chooser table|nil File browser (FileManager only)
+---@field switchDocument fun(self: UI, file: string) Open another document (ReaderUI only)
+---@field openFile fun(self: UI, file: string) Open a document (FileManager only)
 
 ---@class Karakeep : WidgetContainer
 ---@field name string Plugin internal name (from _meta.lua)
