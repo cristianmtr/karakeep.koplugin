@@ -23,7 +23,7 @@ This plugin integrates with [Karakeep](https://karakeep.app/), a self-hostable â
 
 ## Installation
 
-1. Download latest release from the [Releases](https://github.com/AlgusDark/karakeep.koplugin/releases) page.
+1. Download latest release from the [Releases](https://github.com/cristianmtr/karakeep.koplugin/releases) page.
 2. Extract the `karakeep.koplugin` folder into your KOReader `plugins/` directory.
 3. Restart KOReader.
 4. Enable **Karakeep** under **Settings > Plugins**.
