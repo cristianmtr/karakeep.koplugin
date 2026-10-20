@@ -225,7 +225,7 @@ function HttpClient:makeRequest(method, endpoint, config)
         Notification:error(error_text, { timeout = dialogs.error.timeout })
     end
 
-    return nil, Error.new(error_message)
+    return nil, Error.new(error_message, code)
 end
 
 ---Make a GET request

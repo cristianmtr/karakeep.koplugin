@@ -105,7 +105,7 @@ function SyncService:syncAllPendingItems()
     elseif results.success_count > 0 and results.error_count == 0 then
         Notification:success(T(_('Successfully synced %1 items'), results.success_count))
     elseif results.success_count > 0 and results.error_count > 0 then
-        Notification:warn(
+        Notification:warning(
             T(_('Synced %1 items, %2 failed'), results.success_count, results.error_count)
         )
     else

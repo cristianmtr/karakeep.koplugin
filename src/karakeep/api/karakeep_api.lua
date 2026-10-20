@@ -206,6 +206,50 @@ function KarakeepAPI:getListBookmarks(list_id, config)
 end
 
 -- =============================================================================
+-- Highlights
+-- =============================================================================
+
+---@alias HighlightColor 'yellow' | 'red' | 'green' | 'blue'
+
+---Offsets are UTF-16 code unit offsets into the text of the bookmark's
+---reader view HTML (all its text nodes concatenated).
+---`text` and `note` are required by the API but may be JSON null.
+---@class HighlightRequest
+---@field bookmarkId string
+---@field startOffset number
+---@field endOffset number
+---@field color HighlightColor
+---@field text string|table Highlighted text (or JSON null)
+---@field note string|table Note (or JSON null)
+
+---@class HighlightResponse : HighlightRequest
+---@field id string
+---@field createdAt string
+
+---Create a highlight on a link bookmark
+---@param config HttpClientOptions<HighlightRequest, QueryParam[]>
+---@return HighlightResponse|nil result, Error|nil error
+function KarakeepAPI:createHighlight(config)
+    return self.api_client:post('/highlights', config)
+end
+
+---Update the color and/or note of a highlight (offsets can't be changed)
+---@param highlight_id string
+---@param config HttpClientOptions<{color?: HighlightColor, note?: string|table}, QueryParam[]>
+---@return HighlightResponse|nil result, Error|nil error
+function KarakeepAPI:updateHighlight(highlight_id, config)
+    return self.api_client:patch('/highlights/' .. highlight_id, config)
+end
+
+---Delete a highlight
+---@param highlight_id string
+---@param config? HttpClientOptions<nil, QueryParam[]>
+---@return table|nil result, Error|nil error
+function KarakeepAPI:deleteHighlight(highlight_id, config)
+    return self.api_client:delete('/highlights/' .. highlight_id, config)
+end
+
+-- =============================================================================
 -- Assets
 -- =============================================================================
 

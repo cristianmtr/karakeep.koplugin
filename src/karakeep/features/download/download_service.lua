@@ -25,6 +25,7 @@ local FILENAME_TITLE_LIMIT = 100
 ---@field path string Local file path
 ---@field title string Bookmark title at download time
 ---@field downloaded_at number Unix timestamp
+---@field kind? 'link'|'text'|'asset' Bookmark type (missing for downloads made before v0.0.5)
 
 -- **DownloadService** - Downloads Karakeep bookmarks as local files (EPUB for
 -- articles and notes, the original file for PDFs and images) and remembers
@@ -66,6 +67,42 @@ function DownloadService:getDownloadedPath(bookmark_id)
         return entry.path
     end
     return nil
+end
+
+---Get all downloads
+---@return table<string, DownloadEntry> Bookmark id -> download
+function DownloadService:getDownloads()
+    return self.index.data
+end
+
+---@param bookmark_id string
+---@return DownloadEntry|nil
+function DownloadService:getDownload(bookmark_id)
+    return self.index:readSetting(bookmark_id)
+end
+
+---Find which bookmark a local file was downloaded from
+---@param path string
+---@return string|nil bookmark_id
+function DownloadService:getBookmarkIdForPath(path)
+    for bookmark_id, entry in pairs(self.index.data) do
+        if entry.path == path then
+            return bookmark_id
+        end
+    end
+    return nil
+end
+
+---Remember the new location of a downloaded file that was moved
+---@param bookmark_id string
+---@param path string
+function DownloadService:updatePath(bookmark_id, path)
+    local entry = self.index:readSetting(bookmark_id)
+    if entry and entry.path ~= path then
+        entry.path = path
+        self.index:saveSetting(bookmark_id, entry)
+        self.index:flush()
+    end
 end
 
 ---Choose where to save a bookmark. Re-downloads overwrite the previous file so
@@ -318,6 +355,7 @@ function DownloadService:downloadBookmark(bookmark_id)
         path = path,
         title = title,
         downloaded_at = os.time(),
+        kind = content.type,
     })
     self.index:flush()
     logger.info('[Karakeep:Download] Saved bookmark', bookmark_id, 'to', path)

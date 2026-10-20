@@ -14,6 +14,7 @@ local QueueManager = require('karakeep/features/queue/queue_manager')
 local SyncService = require('karakeep/features/sync/sync_service')
 local KarakeepExporter = require('karakeep/features/exporter/karakeep_exporter')
 local DownloadService = require('karakeep/features/download/download_service')
+local HighlightSync = require('karakeep/features/highlights/highlight_sync')
 
 ---Augment UI interface with registered Karakeep modules
 ---@class UI : WidgetContainer
@@ -22,6 +23,8 @@ local DownloadService = require('karakeep/features/download/download_service')
 ---@field karakeep_link KarakeepReaderLink
 ---@field karakeep_queue_manager QueueManager
 ---@field karakeep_downloader DownloadService
+---@field karakeep_highlight_sync HighlightSync
+---@field annotation {annotations: table[]}|nil Annotations module (ReaderUI only)
 ---@field document table|nil Open document (ReaderUI only)
 ---@field file_chooser table|nil File browser (FileManager only)
 ---@field switchDocument fun(self: UI, file: string) Open another document (ReaderUI only)
@@ -106,6 +109,14 @@ function Karakeep:init()
         DownloadService:new({
             ui = self.ui,
             settings = self.settings,
+            data_dir = self.data_dir,
+        })
+    )
+
+    self.ui:registerModule(
+        'karakeep_highlight_sync',
+        HighlightSync:new({
+            ui = self.ui,
             data_dir = self.data_dir,
         })
     )

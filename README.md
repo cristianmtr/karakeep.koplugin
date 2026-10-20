@@ -14,6 +14,7 @@ This plugin integrates with [Karakeep](https://karakeep.app/), a self-hostable �
 - [x] Browse your bookmarks (Unarchived, Favourites, Lists)
 - [x] Search bookmarks
 - [x] Download bookmarks for offline access
+- [x] Sync highlights of downloaded articles to Karakeep
 
 ## Prerequisites
 
@@ -56,6 +57,17 @@ What gets downloaded:
 - PDFs and images are saved as the original file.
 
 Files are saved to `<home folder>/Karakeep` by default. Change this under **Tools > Karakeep > Settings > Download folder**.
+
+### Syncing highlights to Karakeep
+
+Highlights you make in an article downloaded from Karakeep show up on that bookmark in Karakeep, in its reader view and highlights list.
+
+- Highlights are sent a few seconds after you create, edit or delete them. Deleting a highlight in KOReader deletes it in Karakeep, and changing its note or color updates it there. Only highlights created by the plugin are touched.
+- If you're offline, changes wait and are sent when Wi-Fi connects, when you reopen or close the article, or when you sync manually.
+- To sync manually, use **Tools > Karakeep > Sync highlights to Karakeep**. In the reader it syncs the open article; in the file browser it syncs all downloaded articles.
+- Karakeep has four colors, so KOReader colors map to the closest one: orange → red, olive → green, cyan and purple → blue, gray → yellow.
+- Karakeep only supports highlights on web articles (link bookmarks), not on notes, PDFs or images.
+- A highlight is located by its text in the article. If the article changed in Karakeep since you downloaded it, or you highlight the title heading the plugin adds at the top, it can't be found and isn't synced; the plugin tells you when that happens.
 
 ### Bookmarking links
 

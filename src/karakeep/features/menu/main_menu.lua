@@ -23,6 +23,7 @@ return function(karakeep)
                 },
             },
             SyncMenu.getSyncPendingMenuItem(karakeep),
+            karakeep.ui.karakeep_highlight_sync:getMenuItem(),
             updateMenuItems.getCheckForUpdatesMenuItem(karakeep),
         },
     }

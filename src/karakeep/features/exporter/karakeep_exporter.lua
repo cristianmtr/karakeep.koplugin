@@ -150,7 +150,7 @@ function KarakeepExporter:export(book_notes)
     end
 
     if error_count > 0 then
-        Notification:warn(_('Failed to export ') .. error_count .. _(' books'))
+        Notification:warning(_('Failed to export ') .. error_count .. _(' books'))
     end
 
     logger.info(
