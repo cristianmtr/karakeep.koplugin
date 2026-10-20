@@ -26,7 +26,12 @@ local HttpClient = {}
 ---@field error? {text?: string, timeout?: number|nil} Error notification (defaults to 5s)
 ---@field success? {text?: string, timeout?: number|nil} Success notification (defaults to 2s)
 
----@class HttpClientOptions<Body, QueryParams>: {body?: Body, query?: QueryParams, dialogs?: ApiDialogConfig}
+---@class HttpClientOptions<Body, QueryParams>: {body?: Body, query?: QueryParams, dialogs?: ApiDialogConfig, raw?: boolean}
+
+---Response returned instead of decoded JSON when a request is made with `raw = true`
+---@class RawResponse
+---@field body string Response body bytes
+---@field content_type string|nil Value of the Content-Type response header
 
 ---Create a new API instance
 ---@param config HttpClientConfig Configuration table with server address and API token
@@ -68,8 +73,13 @@ local function buildErrorMessage(code, response_text)
     local api_error_message = nil
     if response_text and response_text ~= '' then
         local success, error_data = pcall(JSON.decode, response_text)
-        if success and error_data then
-            api_error_message = error_data
+        if success and type(error_data) == 'table' then
+            -- Karakeep errors look like {code = ..., message = ...} or {error = ...}
+            if type(error_data.message) == 'string' then
+                api_error_message = error_data.message
+            elseif type(error_data.error) == 'string' then
+                api_error_message = error_data.error
+            end
         end
     end
 
@@ -135,7 +145,7 @@ function HttpClient:makeRequest(method, endpoint, config)
 
     local headers = {
         ['Authorization'] = 'Bearer ' .. api_token,
-        ['Accept'] = 'application/json',
+        ['Accept'] = config.raw and '*/*' or 'application/json',
         ['User-Agent'] = 'KOReader/1.0',
     }
 
@@ -156,7 +166,12 @@ function HttpClient:makeRequest(method, endpoint, config)
 
     logger.dbg('[HttpClient] request:', config.body, JSON.encode(config.body), request)
 
-    socketutil:set_timeout(socketutil.LARGE_BLOCK_TIMEOUT, socketutil.LARGE_TOTAL_TIMEOUT)
+    if config.raw then
+        -- Raw requests download files (assets), which can be much bigger than JSON responses
+        socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
+    else
+        socketutil:set_timeout(socketutil.LARGE_BLOCK_TIMEOUT, socketutil.LARGE_TOTAL_TIMEOUT)
+    end
     local code, resp_headers, _status = socket.skip(1, http.request(request))
     logger.dbg('[HttpClient]', method, url, '->', code or 'no response')
     socketutil:reset_timeout()
@@ -179,6 +194,10 @@ function HttpClient:makeRequest(method, endpoint, config)
     if code == 200 or code == 201 or code == 204 then
         if dialogs and dialogs.success and dialogs.success.text then
             Notification:success(dialogs.success.text, { timeout = dialogs.success.timeout })
+        end
+
+        if config.raw then
+            return { body = response_text, content_type = resp_headers['content-type'] }, nil
         end
 
         if response_text and response_text ~= '' then

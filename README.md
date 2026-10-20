@@ -11,9 +11,9 @@ This plugin integrates with [Karakeep](https://karakeep.app/), a self-hostable â
 - [x] Create Bookmarks
   - [x] Save links
   - [x] Export Highlights 
-- [ ] Browse your bookmarks
-- [ ] Search bookmarks
-- [ ] Download bookmarks for offline access
+- [x] Browse your bookmarks (Unarchived, Favourites, Lists)
+- [x] Search bookmarks
+- [x] Download bookmarks for offline access
 
 ## Prerequisites
 
@@ -36,6 +36,26 @@ This plugin integrates with [Karakeep](https://karakeep.app/), a self-hostable â
 4. Save and exit.
 
 ## Usage
+
+### Browsing and downloading bookmarks
+
+Go to **Tools > Karakeep > Browse bookmarks** and pick a view:
+
+- **Unarchived**: everything not archived, newest first
+- **Favourites**: starred bookmarks
+- **Lists**: pick one of your Karakeep lists
+- **Search**: full-text search with Karakeep's search syntax
+
+Bookmarks are listed by title, 10 per page. Moving past the last loaded page fetches the next 10 from Karakeep.
+
+Tap a title to **Download** it or **Download & open** it. Already-downloaded bookmarks offer **Open** and **Download again**; downloading again overwrites the same file, so your reading position is kept.
+
+What gets downloaded:
+
+- Articles (links) and notes become an **EPUB** with their images embedded, readable offline.
+- PDFs and images are saved as the original file.
+
+Files are saved to `<home folder>/Karakeep` by default. Change this under **Tools > Karakeep > Settings > Download folder**.
 
 ### Bookmarking links
 

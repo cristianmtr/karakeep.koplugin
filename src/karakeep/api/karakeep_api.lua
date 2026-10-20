@@ -83,6 +83,7 @@ end
 ---@field imageUrl string|nil
 ---@field imageAssetId string|nil
 ---@field screenshotAssetId string|nil
+---@field pdfAssetId string|nil
 ---@field fullPageArchiveAssetId string|nil
 ---@field precrawledArchiveAssetId string|nil
 ---@field videoAssetId string|nil
@@ -144,6 +145,78 @@ end
 ---@return table|nil result, Error|nil error
 function KarakeepAPI:updateBookmark(bookmark_id, config)
     return self.api_client:patch('/bookmarks/' .. bookmark_id, config)
+end
+
+---@class PaginatedBookmarksResponse
+---@field bookmarks BookmarkResponse[]
+---@field nextCursor string|nil Cursor for the next page (JSON null when there are no more pages)
+
+---@class BookmarkListQuery
+---@field archived? boolean
+---@field favourited? boolean
+---@field limit? number
+---@field cursor? string
+---@field includeContent? boolean
+
+---Get a page of bookmarks
+---@param config HttpClientOptions<nil, BookmarkListQuery>
+---@return PaginatedBookmarksResponse|nil result, Error|nil error
+function KarakeepAPI:getBookmarks(config)
+    return self.api_client:get('/bookmarks', config)
+end
+
+---Search bookmarks (query goes in `q`)
+---@param config HttpClientOptions<nil, BookmarkListQuery|{q: string}>
+---@return PaginatedBookmarksResponse|nil result, Error|nil error
+function KarakeepAPI:searchBookmarks(config)
+    return self.api_client:get('/bookmarks/search', config)
+end
+
+---Get a single bookmark
+---@param bookmark_id string
+---@param config? HttpClientOptions<nil, {includeContent?: boolean}>
+---@return BookmarkResponse|nil result, Error|nil error
+function KarakeepAPI:getBookmark(bookmark_id, config)
+    return self.api_client:get('/bookmarks/' .. bookmark_id, config)
+end
+
+-- =============================================================================
+-- Lists
+-- =============================================================================
+
+---@class ListResponse
+---@field id string
+---@field name string
+---@field icon string
+---@field parentId string|nil
+
+---Get all lists of the user
+---@param config? HttpClientOptions<nil, nil>
+---@return {lists: ListResponse[]}|nil result, Error|nil error
+function KarakeepAPI:getLists(config)
+    return self.api_client:get('/lists', config)
+end
+
+---Get a page of bookmarks in a list
+---@param list_id string
+---@param config HttpClientOptions<nil, BookmarkListQuery>
+---@return PaginatedBookmarksResponse|nil result, Error|nil error
+function KarakeepAPI:getListBookmarks(list_id, config)
+    return self.api_client:get('/lists/' .. list_id .. '/bookmarks', config)
+end
+
+-- =============================================================================
+-- Assets
+-- =============================================================================
+
+---Download an asset's binary content
+---@param asset_id string
+---@param config? HttpClientOptions<nil, nil>
+---@return RawResponse|nil result, Error|nil error
+function KarakeepAPI:getAsset(asset_id, config)
+    config = config or {}
+    config.raw = true
+    return self.api_client:get('/assets/' .. asset_id, config)
 end
 
 return KarakeepAPI
