@@ -118,12 +118,15 @@ function DownloadService:getTargetPath(bookmark_id, title, ext)
     end
 
     local dir = self:getDownloadDir()
-    local filename = util.getSafeFilename(title .. '.' .. ext, dir, FILENAME_TITLE_LIMIT)
+    -- Without a path, getSafeFilename always replaces the characters FAT and
+    -- exFAT reject (\/:*?"<>|). Its file system detection misses exFAT,
+    -- fuseblk and others, so titles with ":" failed to save there.
+    local filename = util.getSafeFilename(title .. '.' .. ext, nil, FILENAME_TITLE_LIMIT)
     local path = dir .. '/' .. filename
     if lfs.attributes(path, 'mode') then
         -- A different file with the same name already exists
         local suffix = ' (' .. bookmark_id:sub(1, 8) .. ').' .. ext
-        filename = util.getSafeFilename(title, dir, FILENAME_TITLE_LIMIT) .. suffix
+        filename = util.getSafeFilename(title, nil, FILENAME_TITLE_LIMIT) .. suffix
         path = dir .. '/' .. filename
     end
     return path
