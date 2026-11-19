@@ -35,6 +35,7 @@ jobs:
         uses: arduino/setup-task@v2
         with:
           version: 3.x
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup git-cliff
         uses: kenji-miyake/setup-git-cliff@v2
