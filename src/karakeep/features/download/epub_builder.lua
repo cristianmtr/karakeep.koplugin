@@ -1,5 +1,6 @@
 local lfs = require('libs/libkoreader-lfs')
 local logger = require('logger')
+local mime = require('mime')
 local socket_url = require('socket.url')
 local util = require('util')
 
@@ -122,9 +123,9 @@ function EpubBuilder.detectImageExtension(content, content_type)
         return 'webp'
     end
     if content_type then
-        local mime = content_type:match('^%s*([^;%s]+)')
-        if mime then
-            return CONTENT_TYPE_EXTENSIONS[mime:lower()]
+        local mimetype = content_type:match('^%s*([^;%s]+)')
+        if mimetype then
+            return CONTENT_TYPE_EXTENSIONS[mimetype:lower()]
         end
     end
     return nil
@@ -140,7 +141,80 @@ local function getAttribute(tag, name)
     return value
 end
 
----Resolve the URL of an <img> tag to an absolute http(s) URL
+-- Scheme of the placeholder URLs that replace inline (data:) images
+local INLINE_IMAGE_SCHEME = 'karakeep-inline:'
+
+---Decode a data: URI
+---@param uri string
+---@return string|nil content, string|nil content_type
+local function decodeDataUri(uri)
+    local header, data = uri:match('^data:([^,]*),(.*)$')
+    if not header then
+        return nil
+    end
+    local content_type = header:match('^[^;]+')
+    if header:match(';%s*base64%s*$') then
+        return mime.unb64(data), content_type
+    end
+    return util.urlDecode(data), content_type
+end
+
+---Move inline (data:) images out of the HTML. Pages can embed images of
+---several MB in a single attribute, which crengine's HTML parser is very slow
+---on. Each image gets a short placeholder URL instead.
+---@param html string
+---@return string html, table<string, {content: string, content_type: string|nil}> images
+local function extractInlineImages(html)
+    local images = {}
+    local count = 0
+    html = html:gsub('<img%s[^>]*>', function(tag)
+        local src = getAttribute(tag, 'src')
+        if not src or src:sub(1, 5) ~= 'data:' then
+            return nil
+        end
+        local replacement = ''
+        local lazy_src = getAttribute(tag, 'data%-src')
+        if not lazy_src or lazy_src == '' or lazy_src:sub(1, 5) == 'data:' then
+            -- No lazy-loaded URL: the data: URI is the image itself
+            local content, content_type = decodeDataUri(util.htmlEntitiesToUtf8(src))
+            if content and content ~= '' then
+                count = count + 1
+                replacement = INLINE_IMAGE_SCHEME .. count
+                images[replacement] = { content = content, content_type = content_type }
+            end
+        end
+        -- Plain find/sub: the value is too long for pattern replacement
+        local start, stop = tag:find(src, 1, true)
+        return tag:sub(1, start - 1) .. replacement .. tag:sub(stop + 1)
+    end)
+    -- Drop any other data: attribute values (srcset, styles, links)
+    html = html:gsub('<[^>]+>', function(tag)
+        if not tag:find('data:', 1, true) then
+            return nil
+        end
+        return (tag:gsub('=%s*"data:[^"]*"', '=""'):gsub("=%s*'data:[^']*'", "=''"))
+    end)
+    return html, images
+end
+
+---Remove the elements of a full HTML page that can't be read in an EPUB
+---(scripts, styles, embedded frames)
+---@param html string
+---@return string
+function EpubBuilder.cleanPageHtml(html)
+    for _, name in ipairs({ 'script', 'style', 'noscript', 'template', 'iframe', 'svg' }) do
+        -- Lua patterns have no case-insensitive flag
+        local pattern = name:gsub('%a', function(c)
+            return '[' .. c:lower() .. c:upper() .. ']'
+        end)
+        html = html:gsub('<' .. pattern .. '[%s>].-</' .. pattern .. '%s*>', '')
+    end
+    html = html:gsub('<!%-%-.-%-%->', '')
+    return html
+end
+
+---Resolve the URL of an <img> tag to an absolute http(s) URL, or to the
+---placeholder URL of an inline image
 ---@param tag string The <img ...> tag
 ---@param base_url string|nil
 ---@return string|nil
@@ -152,6 +226,9 @@ function EpubBuilder.resolveImageUrl(tag, base_url)
     end
     if not src or src == '' or src:sub(1, 5) == 'data:' then
         return nil
+    end
+    if src:sub(1, #INLINE_IMAGE_SCHEME) == INLINE_IMAGE_SCHEME then
+        return src
     end
 
     src = util.htmlEntitiesToUtf8(src)
@@ -383,7 +460,17 @@ end
 function EpubBuilder.build(opts)
     -- Keep only the body when given a full HTML document
     local body = opts.html:match('<body[^>]*>(.*)</body>') or opts.html
+    local inline_images
+    body, inline_images = extractInlineImages(body)
     local xhtml = buildXhtml(opts.title, buildHeader(opts) .. body)
+
+    local function fetchImage(url)
+        local inline = inline_images[url]
+        if inline then
+            return inline.content, inline.content_type
+        end
+        return opts.fetch_image(url)
+    end
 
     -- Collect the unique image URLs, in document order
     local image_urls = {}
@@ -419,7 +506,7 @@ function EpubBuilder.build(opts)
         if opts.on_progress and not opts.on_progress(i - 1, #image_urls) then
             return abort(nil, true)
         end
-        local content, content_type = opts.fetch_image(url)
+        local content, content_type = fetchImage(url)
         local ext = content and EpubBuilder.detectImageExtension(content, content_type)
         if content and ext then
             local id = ('img%03d'):format(#images + 1)

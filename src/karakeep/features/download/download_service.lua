@@ -225,6 +225,22 @@ function DownloadService:getLinkHtml(content)
     return nil
 end
 
+---Download the saved copy of the whole page (a single-file HTML archive),
+---without its scripts and styles
+---@param content table Bookmark content
+---@return string|nil html
+function DownloadService:getArchivedPageHtml(content)
+    for _, field in ipairs({ 'fullPageArchiveAssetId', 'precrawledArchiveAssetId' }) do
+        local asset_id = str(content[field])
+        local asset = asset_id and self.ui.karakeep_api:getAsset(asset_id)
+        local html = asset and str(asset.body)
+        if html then
+            return EpubBuilder.cleanPageHtml(html)
+        end
+    end
+    return nil
+end
+
 ---@param bookmark BookmarkResponse
 ---@param title string
 ---@param html string
@@ -332,10 +348,16 @@ function DownloadService:downloadBookmark(bookmark_id)
         elseif str(content.pdfAssetId) then
             path, save_err = self:saveAsset(bookmark, title, content.pdfAssetId, 'pdf')
         else
-            return nil,
-                _(
-                    'This bookmark has no readable content yet. Karakeep may still be fetching the page.'
-                )
+            -- The article could not be extracted: use the saved copy of the page
+            Trapper:info(_('Fetching saved page…'))
+            html = self:getArchivedPageHtml(content)
+            if not html then
+                return nil,
+                    _(
+                        'This bookmark has no readable content yet. Karakeep may still be fetching the page.'
+                    )
+            end
+            path, save_err, cancelled = self:saveAsEpub(bookmark, title, html, content.url)
         end
     elseif content.type == 'text' then
         local html = textToHtml(str(content.text) or '')
